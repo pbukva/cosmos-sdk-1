@@ -742,16 +742,16 @@ func (ks keystore) writeInfo(info Info) error {
 	key := infoKey(info.GetName())
 	serializedInfo := marshalInfo(info)
 
-	exists, err := ks.existsInDb(info)
-	if exists {
-		return errors.New("public key already exist in keybase")
-	}
+	// exists, err := ks.existsInDb(info)
+	// if exists {
+	// 	return errors.New("public key already exist in keybase")
+	// }
 
-	if err != nil {
-		return err
-	}
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = ks.db.Set(keyring.Item{
+	err := ks.db.Set(keyring.Item{
 		Key:  string(key),
 		Data: serializedInfo,
 	})

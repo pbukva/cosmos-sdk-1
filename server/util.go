@@ -240,6 +240,12 @@ func interceptConfigs(rootViper *viper.Viper, customAppTemplate string, customCo
 		if conf.RPC.PprofListenAddress == defaultCometCfg.RPC.PprofListenAddress {
 			conf.RPC.PprofListenAddress = "localhost:6060"
 		}
+
+		// Custom Fetch.ai config
+		conf.P2P.AllowDuplicateIP = true
+		// --------
+
+
 		tmcfg.WriteConfigFile(tmCfgFile, conf)
 	case err != nil:
 		return nil, err

@@ -39,7 +39,7 @@ func GetCmdQueryFeeGrant() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		Short: "Query details of a single grant",
 		Long: strings.TrimSpace(
-			fmt.Sprintf(`Query details for a grant. 
+			fmt.Sprintf(`Query details for a grant.
 You can find the fee-grant of a granter and grantee.
 
 Example:

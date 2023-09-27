@@ -17,7 +17,7 @@ type Keeper struct {
 	cdc              codec.BinaryCodec
 	storeKey         storetypes.StoreKey
 	stakingKeeper    types.StakingKeeper
-	bankKeeper       types.BankKeeper
+	BankKeeper       types.BankKeeper
 	feeCollectorName string
 
 	// the address capable of executing a MsgUpdateParams message. Typically, this
@@ -44,7 +44,7 @@ func NewKeeper(
 		cdc:              cdc,
 		storeKey:         key,
 		stakingKeeper:    sk,
-		bankKeeper:       bk,
+		BankKeeper:       bk,
 		feeCollectorName: feeCollectorName,
 		authority:        authority,
 	}
@@ -124,11 +124,11 @@ func (k Keeper) MintCoins(ctx sdk.Context, newCoins sdk.Coins) error {
 		return nil
 	}
 
-	return k.bankKeeper.MintCoins(ctx, types.ModuleName, newCoins)
+	return k.BankKeeper.MintCoins(ctx, types.ModuleName, newCoins)
 }
 
 // AddCollectedFees implements an alias call to the underlying supply keeper's
 // AddCollectedFees to be used in BeginBlocker.
 func (k Keeper) AddCollectedFees(ctx sdk.Context, fees sdk.Coins) error {
-	return k.bankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeCollectorName, fees)
+	return k.BankKeeper.SendCoinsFromModuleToModule(ctx, types.ModuleName, k.feeCollectorName, fees)
 }

@@ -1,13 +1,65 @@
 package mint
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/telemetry"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/mint/cache"
 	"github.com/cosmos/cosmos-sdk/x/mint/keeper"
 	"github.com/cosmos/cosmos-sdk/x/mint/types"
 )
+
+// HandleMunicipalInflation iterates through all other native tokens specified in the minter.MunicipalInflation structure, and processes
+// the minting of new coins in line with the respective inflation rate of each denomination
+func HandleMunicipalInflation(minter *types.Minter, params *types.Params, ctx *sdk.Context, k *keeper.Keeper) {
+	cache.GMunicipalInflationCache.RefreshIfNecessary(&minter.MunicipalInflation, params.BlocksPerYear)
+
+	// iterate through native denominations
+	for _, pair := range minter.MunicipalInflation {
+		targetAddress := pair.Inflation.TargetAddress
+
+		// gather supply value & calculate number of new tokens created from relevant inflation
+		totalDenomSupply := k.BankKeeper.GetSupply(*ctx, pair.Denom)
+
+		cacheItem := cache.GMunicipalInflationCache.GetInflation(pair.Denom)
+
+		if cacheItem == nil {
+			panic(fmt.Errorf("numicipal inflation: missing cache item for the \"%s\" denomination", pair.Denom))
+		}
+
+		coinsToMint := types.CalculateInflationIssuance(cacheItem.PerBlockInflation, totalDenomSupply)
+
+		err := k.MintCoins(*ctx, coinsToMint)
+		if err != nil {
+			panic(err)
+		}
+
+		// send these new tokens to respective target address
+		// TODO(JS): investigate whether this should be carried out in distribution module or not
+
+		// Convert targetAddress to sdk.AccAddress
+		acc, err := sdk.AccAddressFromBech32(targetAddress)
+		if err != nil {
+			panic(err)
+		}
+
+		err = k.BankKeeper.SendCoinsFromModuleToAccount(*ctx, types.ModuleName, acc, coinsToMint)
+		if err != nil {
+			panic(err)
+		}
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(
+				types.EventTypeMunicipalMint,
+				sdk.NewAttribute(types.AttributeKeyDenom, pair.Denom),
+				sdk.NewAttribute(types.AttributeKeyInflation, pair.Inflation.Value.String()),
+				sdk.NewAttribute(types.AttributeKeyTargetAddr, pair.Inflation.TargetAddress),
+				sdk.NewAttribute(sdk.AttributeKeyAmount, coinsToMint.String()),
+			),
+		)
+	}
+}
 
 // BeginBlocker mints new tokens for the previous block.
 func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculationFn) {
@@ -17,10 +69,16 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	minter := k.GetMinter(ctx)
 	params := k.GetParams(ctx)
 
+	HandleMunicipalInflation(&minter, &params, &ctx, &k)
+
 	// recalculate inflation rate
 	totalStakingSupply := k.StakingTokenSupply(ctx)
-	bondedRatio := k.BondedRatio(ctx)
-	minter.Inflation = ic(ctx, minter, params, bondedRatio)
+	// TODO(pb): !!! IMPORTANT !!! Fetch.ai specific implementation. The v0.47.x changed implementation (see
+	//           the commented-out line below. This needs to be reconciliated.
+	minter.Inflation = minter.NextInflationRate(params)
+	// TODO(pb): !!! IMPORTANT !!!: Commented-out line below is new implementation from v0.47.x. This needs
+	//           to be reconciliated with Fetch.ai specific imlementation (the line above).
+	//minter.Inflation = ic(ctx, minter, params, bondedRatio)
 	minter.AnnualProvisions = minter.NextAnnualProvisions(params, totalStakingSupply)
 	k.SetMinter(ctx, minter)
 
@@ -46,7 +104,6 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(
 			types.EventTypeMint,
-			sdk.NewAttribute(types.AttributeKeyBondedRatio, bondedRatio.String()),
 			sdk.NewAttribute(types.AttributeKeyInflation, minter.Inflation.String()),
 			sdk.NewAttribute(types.AttributeKeyAnnualProvisions, minter.AnnualProvisions.String()),
 			sdk.NewAttribute(sdk.AttributeKeyAmount, mintedCoin.Amount.String()),

@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     branches:
-      - release/v0.47.x
+      - main
 
 permissions:
   contents: read

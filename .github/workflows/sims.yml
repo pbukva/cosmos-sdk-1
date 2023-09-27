@@ -6,6 +6,10 @@ on:
     - cron: "0 */2 * * *"
   release:
     types: [published]
+  pull_request:
+  push:
+    branches:
+      - main
 
 concurrency:
   group: ci-${{ github.ref }}-sims

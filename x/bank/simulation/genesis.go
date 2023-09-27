@@ -12,10 +12,21 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
+var (
+	testSupplyVal, _                = sdk.NewIntFromString("1000000000000000000")
+	AdditionalTestBalancePerAccount = sdk.NewCoins(
+		sdk.NewCoin("denom0", testSupplyVal),
+		sdk.NewCoin("denom1", testSupplyVal),
+		sdk.NewCoin("denom2", testSupplyVal),
+		sdk.NewCoin("denom3", testSupplyVal),
+	)
+)
+
 // RandomGenesisDefaultSendEnabledParam computes randomized allow all send transfers param for the bank module
 func RandomGenesisDefaultSendEnabledParam(r *rand.Rand) bool {
 	// 90% chance of transfers being enabled or P(a) = 0.9 for success
 	return r.Int63n(100) < 90
+
 }
 
 // RandomGenesisSendEnabled creates randomized values for the SendEnabled slice.
@@ -60,9 +71,11 @@ func RandomGenesisBalances(simState *module.SimulationState) []types.Balance {
 	genesisBalances := []types.Balance{}
 
 	for _, acc := range simState.Accounts {
+		coins := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(simState.InitialStake)))
+		coins.Add(AdditionalTestBalancePerAccount...)
 		genesisBalances = append(genesisBalances, types.Balance{
 			Address: acc.Address.String(),
-			Coins:   sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, simState.InitialStake)),
+			Coins:   coins,
 		})
 	}
 
@@ -81,7 +94,11 @@ func RandomizedGenState(simState *module.SimulationState) {
 
 	numAccs := int64(len(simState.Accounts))
 	totalSupply := simState.InitialStake.Mul(sdk.NewInt((numAccs + simState.NumBonded)))
+
 	supply := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, totalSupply))
+	for _, b := range AdditionalTestBalancePerAccount {
+		supply.Add(sdk.NewCoin(b.Denom, b.Amount.MulRaw(numAccs)))
+	}
 
 	bankGenesis := types.GenesisState{
 		Params:      types.NewParams(defaultSendEnabledParam),

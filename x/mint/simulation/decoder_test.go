@@ -19,7 +19,7 @@ func TestDecodeStore(t *testing.T) {
 
 	dec := simulation.NewDecodeStore(encCfg.Codec)
 
-	minter := types.NewMinter(math.LegacyOneDec(), math.LegacyNewDec(15))
+	minter := types.NewMinter(math.LegacyOneDec(), math.LegacyNewDec(15), nil)
 
 	kvPairs := kv.Pairs{
 		Pairs: []kv.Pair{

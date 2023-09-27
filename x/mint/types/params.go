@@ -12,26 +12,20 @@ import (
 )
 
 // NewParams returns Params instance with the given values.
-func NewParams(mintDenom string, inflationRateChange, inflationMax, inflationMin, goalBonded sdk.Dec, blocksPerYear uint64) Params {
+func NewParams(mintDenom string, inflationRate sdk.Dec, blocksPerYear uint64) Params {
 	return Params{
-		MintDenom:           mintDenom,
-		InflationRateChange: inflationRateChange,
-		InflationMax:        inflationMax,
-		InflationMin:        inflationMin,
-		GoalBonded:          goalBonded,
-		BlocksPerYear:       blocksPerYear,
+		MintDenom:     mintDenom,
+		InflationRate: inflationRate,
+		BlocksPerYear: blocksPerYear,
 	}
 }
 
 // DefaultParams returns default x/mint module parameters.
 func DefaultParams() Params {
 	return Params{
-		MintDenom:           sdk.DefaultBondDenom,
-		InflationRateChange: sdk.NewDecWithPrec(13, 2),
-		InflationMax:        sdk.NewDecWithPrec(20, 2),
-		InflationMin:        sdk.NewDecWithPrec(7, 2),
-		GoalBonded:          sdk.NewDecWithPrec(67, 2),
-		BlocksPerYear:       uint64(60 * 60 * 8766 / 5), // assuming 5 second block times
+		MintDenom:     sdk.DefaultBondDenom,
+		InflationRate: sdk.NewDecWithPrec(3, 2),
+		BlocksPerYear: uint64(60 * 60 * 8766 / 5), // assuming 5 second block times
 	}
 }
 
@@ -40,28 +34,12 @@ func (p Params) Validate() error {
 	if err := validateMintDenom(p.MintDenom); err != nil {
 		return err
 	}
-	if err := validateInflationRateChange(p.InflationRateChange); err != nil {
-		return err
-	}
-	if err := validateInflationMax(p.InflationMax); err != nil {
-		return err
-	}
-	if err := validateInflationMin(p.InflationMin); err != nil {
-		return err
-	}
-	if err := validateGoalBonded(p.GoalBonded); err != nil {
+	if err := validateInflationRate(p.InflationRate); err != nil {
 		return err
 	}
 	if err := validateBlocksPerYear(p.BlocksPerYear); err != nil {
 		return err
 	}
-	if p.InflationMax.LT(p.InflationMin) {
-		return fmt.Errorf(
-			"max inflation (%s) must be greater than or equal to min inflation (%s)",
-			p.InflationMax, p.InflationMin,
-		)
-	}
-
 	return nil
 }
 
@@ -87,77 +65,20 @@ func validateMintDenom(i interface{}) error {
 	return nil
 }
 
-func validateInflationRateChange(i interface{}) error {
+func validateInflationRate(i interface{}) error {
 	v, ok := i.(sdk.Dec)
 	if !ok {
 		return fmt.Errorf("invalid parameter type: %T", i)
 	}
 
 	if v.IsNil() {
-		return fmt.Errorf("inflation rate change cannot be nil: %s", v)
+		return fmt.Errorf("inflation rate cannot be nil: %s", v)
 	}
 	if v.IsNegative() {
-		return fmt.Errorf("inflation rate change cannot be negative: %s", v)
+		return fmt.Errorf("inflation rate cannot be negative: %s", v)
 	}
 	if v.GT(math.LegacyOneDec()) {
-		return fmt.Errorf("inflation rate change too large: %s", v)
-	}
-
-	return nil
-}
-
-func validateInflationMax(i interface{}) error {
-	v, ok := i.(sdk.Dec)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.IsNil() {
-		return fmt.Errorf("max inflation cannot be nil: %s", v)
-	}
-	if v.IsNegative() {
-		return fmt.Errorf("max inflation cannot be negative: %s", v)
-	}
-	if v.GT(math.LegacyOneDec()) {
-		return fmt.Errorf("max inflation too large: %s", v)
-	}
-
-	return nil
-}
-
-func validateInflationMin(i interface{}) error {
-	v, ok := i.(sdk.Dec)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.IsNil() {
-		return fmt.Errorf("min inflation cannot be nil: %s", v)
-	}
-	if v.IsNegative() {
-		return fmt.Errorf("min inflation cannot be negative: %s", v)
-	}
-	if v.GT(math.LegacyOneDec()) {
-		return fmt.Errorf("min inflation too large: %s", v)
-	}
-
-	return nil
-}
-
-func validateGoalBonded(i interface{}) error {
-	v, ok := i.(sdk.Dec)
-	if !ok {
-		return fmt.Errorf("invalid parameter type: %T", i)
-	}
-
-	if v.IsNil() {
-		return fmt.Errorf("goal bonded cannot be nil: %s", v)
-	}
-	if v.IsNegative() || v.IsZero() {
-		return fmt.Errorf("goal bonded must be positive: %s", v)
-	}
-	if v.GT(math.LegacyOneDec()) {
-		return fmt.Errorf("goal bonded too large: %s", v)
+		return fmt.Errorf("inflation rate too large: %s", v)
 	}
 
 	return nil

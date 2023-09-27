@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/cosmos/cosmos-sdk/x/bank/simulation"
 	"cosmossdk.io/math"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/mint/types"
@@ -15,11 +17,8 @@ import (
 
 // Simulation parameter constants
 const (
-	Inflation           = "inflation"
-	InflationRateChange = "inflation_rate_change"
-	InflationMax        = "inflation_max"
-	InflationMin        = "inflation_min"
-	GoalBonded          = "goal_bonded"
+	Inflation     = "inflation"
+	InflationRate = "inflation_rate"
 )
 
 // GenInflation randomized Inflation
@@ -27,24 +26,38 @@ func GenInflation(r *rand.Rand) math.LegacyDec {
 	return sdk.NewDecWithPrec(int64(r.Intn(99)), 2)
 }
 
-// GenInflationRateChange randomized InflationRateChange
-func GenInflationRateChange(r *rand.Rand) math.LegacyDec {
+// GenInflationRate randomized InflationRate
+func GenInflationRate(r *rand.Rand) math.Legacy {
 	return sdk.NewDecWithPrec(int64(r.Intn(99)), 2)
 }
 
-// GenInflationMax randomized InflationMax
-func GenInflationMax(r *rand.Rand) math.LegacyDec {
-	return sdk.NewDecWithPrec(20, 2)
-}
+// GenMunicipalInflation randomized Municipal Inflation configuration
+func GenMunicipalInflation(simState *module.SimulationState) []*types.MunicipalInflationPair {
+	r := simState.Rand
 
-// GenInflationMin randomized InflationMin
-func GenInflationMin(r *rand.Rand) math.LegacyDec {
-	return sdk.NewDecWithPrec(7, 2)
-}
+	coins := make([]*sdk.Coin, len(simulation.AdditionalTestBalancePerAccount))
+	for i := 0; i < len(simulation.AdditionalTestBalancePerAccount); i++ {
+		coins[i] = &simulation.AdditionalTestBalancePerAccount[i]
+	}
 
-// GenGoalBonded randomized GoalBonded
-func GenGoalBonded(r *rand.Rand) math.LegacyDec {
-	return sdk.NewDecWithPrec(67, 2)
+	len_ := r.Intn(len(coins) + 1)
+	municipalInflation := make([]*types.MunicipalInflationPair, len_)
+	for i := 0; i < len_; i++ {
+		lenCoins := len(coins)
+		lastIdx := lenCoins - 1
+		rndIdx := r.Intn(lenCoins)
+
+		// Swapping rndIdx element with the last element in the slice and cuttig slice without last element
+		c := coins[rndIdx]
+		coins[rndIdx] = coins[lastIdx]
+		coins = coins[:lastIdx]
+
+		acc := &simState.Accounts[r.Intn(len(simState.Accounts))]
+		infl := sdk.NewDecWithPrec(r.Int63n(201), 2)
+		municipalInflation[i] = &types.MunicipalInflationPair{Denom: c.Denom, Inflation: types.NewMunicipalInflation(acc.Address.String(), infl)}
+	}
+
+	return municipalInflation
 }
 
 // RandomizedGenState generates a random GenesisState for mint
@@ -59,33 +72,17 @@ func RandomizedGenState(simState *module.SimulationState) {
 	// params
 	var inflationRateChange sdk.Dec
 	simState.AppParams.GetOrGenerate(
-		simState.Cdc, InflationRateChange, &inflationRateChange, simState.Rand,
-		func(r *rand.Rand) { inflationRateChange = GenInflationRateChange(r) },
-	)
-
-	var inflationMax sdk.Dec
-	simState.AppParams.GetOrGenerate(
-		simState.Cdc, InflationMax, &inflationMax, simState.Rand,
-		func(r *rand.Rand) { inflationMax = GenInflationMax(r) },
-	)
-
-	var inflationMin sdk.Dec
-	simState.AppParams.GetOrGenerate(
-		simState.Cdc, InflationMin, &inflationMin, simState.Rand,
-		func(r *rand.Rand) { inflationMin = GenInflationMin(r) },
-	)
-
-	var goalBonded sdk.Dec
-	simState.AppParams.GetOrGenerate(
-		simState.Cdc, GoalBonded, &goalBonded, simState.Rand,
-		func(r *rand.Rand) { goalBonded = GenGoalBonded(r) },
+		simState.Cdc, InflationRate, &inflationRateChange, simState.Rand,
+		func(r *rand.Rand) { inflationRateChange = GenInflationRate(r) },
 	)
 
 	mintDenom := sdk.DefaultBondDenom
 	blocksPerYear := uint64(60 * 60 * 8766 / 5)
-	params := types.NewParams(mintDenom, inflationRateChange, inflationMax, inflationMin, goalBonded, blocksPerYear)
+	params := types.NewParams(mintDenom, inflationRateChange, blocksPerYear)
 
-	mintGenesis := types.NewGenesisState(types.InitialMinter(inflation), params)
+	minter := types.InitialMinter(inflation)
+	minter.MunicipalInflation = GenMunicipalInflation(simState)
+	mintGenesis := types.NewGenesisState(minter, params)
 
 	bz, err := json.MarshalIndent(&mintGenesis, "", " ")
 	if err != nil {

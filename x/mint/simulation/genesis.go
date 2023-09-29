@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/cosmos/cosmos-sdk/x/bank/simulation"
 	"cosmossdk.io/math"
+	"github.com/cosmos/cosmos-sdk/x/bank/simulation"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -27,7 +27,7 @@ func GenInflation(r *rand.Rand) math.LegacyDec {
 }
 
 // GenInflationRate randomized InflationRate
-func GenInflationRate(r *rand.Rand) math.Legacy {
+func GenInflationRate(r *rand.Rand) math.LegacyDec {
 	return sdk.NewDecWithPrec(int64(r.Intn(99)), 2)
 }
 

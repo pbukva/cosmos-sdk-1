@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Query_Params_FullMethodName           = "/cosmos.mint.v1beta1.Query/Params"
-	Query_Inflation_FullMethodName        = "/cosmos.mint.v1beta1.Query/Inflation"
-	Query_AnnualProvisions_FullMethodName = "/cosmos.mint.v1beta1.Query/AnnualProvisions"
+	Query_Params_FullMethodName             = "/cosmos.mint.v1beta1.Query/Params"
+	Query_Inflation_FullMethodName          = "/cosmos.mint.v1beta1.Query/Inflation"
+	Query_MunicipalInflation_FullMethodName = "/cosmos.mint.v1beta1.Query/MunicipalInflation"
+	Query_AnnualProvisions_FullMethodName   = "/cosmos.mint.v1beta1.Query/AnnualProvisions"
 )
 
 // QueryClient is the client API for Query service.
@@ -32,6 +33,8 @@ type QueryClient interface {
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 	// Inflation returns the current minting inflation value.
 	Inflation(ctx context.Context, in *QueryInflationRequest, opts ...grpc.CallOption) (*QueryInflationResponse, error)
+	// Inflation returns the current minting inflation value.
+	MunicipalInflation(ctx context.Context, in *QueryMunicipalInflationRequest, opts ...grpc.CallOption) (*QueryMunicipalInflationResponse, error)
 	// AnnualProvisions current minting annual provisions value.
 	AnnualProvisions(ctx context.Context, in *QueryAnnualProvisionsRequest, opts ...grpc.CallOption) (*QueryAnnualProvisionsResponse, error)
 }
@@ -62,6 +65,15 @@ func (c *queryClient) Inflation(ctx context.Context, in *QueryInflationRequest, 
 	return out, nil
 }
 
+func (c *queryClient) MunicipalInflation(ctx context.Context, in *QueryMunicipalInflationRequest, opts ...grpc.CallOption) (*QueryMunicipalInflationResponse, error) {
+	out := new(QueryMunicipalInflationResponse)
+	err := c.cc.Invoke(ctx, Query_MunicipalInflation_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *queryClient) AnnualProvisions(ctx context.Context, in *QueryAnnualProvisionsRequest, opts ...grpc.CallOption) (*QueryAnnualProvisionsResponse, error) {
 	out := new(QueryAnnualProvisionsResponse)
 	err := c.cc.Invoke(ctx, Query_AnnualProvisions_FullMethodName, in, out, opts...)
@@ -79,6 +91,8 @@ type QueryServer interface {
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	// Inflation returns the current minting inflation value.
 	Inflation(context.Context, *QueryInflationRequest) (*QueryInflationResponse, error)
+	// Inflation returns the current minting inflation value.
+	MunicipalInflation(context.Context, *QueryMunicipalInflationRequest) (*QueryMunicipalInflationResponse, error)
 	// AnnualProvisions current minting annual provisions value.
 	AnnualProvisions(context.Context, *QueryAnnualProvisionsRequest) (*QueryAnnualProvisionsResponse, error)
 	mustEmbedUnimplementedQueryServer()
@@ -93,6 +107,9 @@ func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*Q
 }
 func (UnimplementedQueryServer) Inflation(context.Context, *QueryInflationRequest) (*QueryInflationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Inflation not implemented")
+}
+func (UnimplementedQueryServer) MunicipalInflation(context.Context, *QueryMunicipalInflationRequest) (*QueryMunicipalInflationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MunicipalInflation not implemented")
 }
 func (UnimplementedQueryServer) AnnualProvisions(context.Context, *QueryAnnualProvisionsRequest) (*QueryAnnualProvisionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AnnualProvisions not implemented")
@@ -146,6 +163,24 @@ func _Query_Inflation_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_MunicipalInflation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryMunicipalInflationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).MunicipalInflation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_MunicipalInflation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).MunicipalInflation(ctx, req.(*QueryMunicipalInflationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Query_AnnualProvisions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(QueryAnnualProvisionsRequest)
 	if err := dec(in); err != nil {
@@ -178,6 +213,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Inflation",
 			Handler:    _Query_Inflation_Handler,
+		},
+		{
+			MethodName: "MunicipalInflation",
+			Handler:    _Query_MunicipalInflation_Handler,
 		},
 		{
 			MethodName: "AnnualProvisions",

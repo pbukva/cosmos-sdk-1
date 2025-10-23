@@ -45,7 +45,7 @@ message QueryInflationRequest {}
 
 // QueryMunicipalInflationRequest is the request type for the Query/MunicipalInflation RPC method.
 message QueryMunicipalInflationRequest {
-  optional string denom = 1;
+  string denom = 1;
 }
 
 // QueryInflationResponse is the response type for the Query/Inflation RPC

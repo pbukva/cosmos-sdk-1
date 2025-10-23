@@ -107,7 +107,7 @@ Otherwise it returns only the configuration for the provided 'denomination' valu
 
 			var req types.QueryMunicipalInflationRequest
 			if len(args) > 0 {
-				req = types.QueryMunicipalInflationRequest{XDenom: &types.QueryMunicipalInflationRequest_Denom{Denom: args[0]}}
+				req = types.QueryMunicipalInflationRequest{Denom: args[0]}
 			} else {
 				req = types.QueryMunicipalInflationRequest{}
 			}

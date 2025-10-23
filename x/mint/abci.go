@@ -74,10 +74,10 @@ func BeginBlocker(ctx sdk.Context, k keeper.Keeper, ic types.InflationCalculatio
 	// recalculate inflation rate
 	totalStakingSupply := k.StakingTokenSupply(ctx)
 	// TODO(pb): !!! IMPORTANT !!! Fetch.ai specific implementation. The v0.47.x changed implementation (see
-	//           the commented-out line below. This needs to be reconciliated.
+	//           the commented-out line below. This needs to be reconciled.
 	minter.Inflation = minter.NextInflationRate(params)
 	// TODO(pb): !!! IMPORTANT !!!: Commented-out line below is new implementation from v0.47.x. This needs
-	//           to be reconciliated with Fetch.ai specific imlementation (the line above).
+	//           to be reconciled with Fetch.ai specific implementation (the line above).
 	//minter.Inflation = ic(ctx, minter, params, bondedRatio)
 	minter.AnnualProvisions = minter.NextAnnualProvisions(params, totalStakingSupply)
 	k.SetMinter(ctx, minter)

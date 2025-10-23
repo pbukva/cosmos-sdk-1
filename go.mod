@@ -204,3 +204,7 @@ retract (
 	// do not use
 	v0.43.0
 )
+
+//replace (
+//    github.com/grpc-ecosystem/grpc-gateway => github.com/grpc-ecosystem/grpc-gateway/v2 v2.3.0
+//)
